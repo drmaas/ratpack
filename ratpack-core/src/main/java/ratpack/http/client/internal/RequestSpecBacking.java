@@ -36,7 +36,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.Duration;
 
-class RequestSpecBacking {
+public class RequestSpecBacking {
 
   private final MutableHeaders headers;
   private final URI uri;
