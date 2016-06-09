@@ -25,7 +25,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.ChannelPoolMap;
 import io.netty.handler.codec.PrematureChannelClosureException;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -70,7 +69,7 @@ public abstract class AbstractPooledRequestAction<T> implements RequestAction<T>
   private static final Pattern ABSOLUTE_PATTERN = Pattern.compile("^https?://.*");
 
   private final Action<? super RequestSpec> requestConfigurer;
-  protected final ChannelPoolMap<URI, ChannelPool> channelPoolMap;
+  protected final ChannelPoolMap<URI, BootstrappingChannelPool> channelPoolMap;
   private final MutableHeaders headers;
   private final RequestSpecBacking requestSpecBacking;
   protected final ByteBufAllocator byteBufAllocator;
@@ -84,7 +83,7 @@ public abstract class AbstractPooledRequestAction<T> implements RequestAction<T>
   private final AtomicBoolean fired = new AtomicBoolean();
   protected final Execution execution;
 
-  public AbstractPooledRequestAction(Action<? super RequestSpec> requestConfigurer, ChannelPoolMap<URI, ChannelPool> channelPoolMap, URI uri, ByteBufAllocator byteBufAllocator, Execution execution, int redirectCount) {
+  public AbstractPooledRequestAction(Action<? super RequestSpec> requestConfigurer, ChannelPoolMap<URI, BootstrappingChannelPool> channelPoolMap, URI uri, ByteBufAllocator byteBufAllocator, Execution execution, int redirectCount) {
     this.requestConfigurer = requestConfigurer;
     this.channelPoolMap = channelPoolMap;
     this.byteBufAllocator = byteBufAllocator;
@@ -129,13 +128,15 @@ public abstract class AbstractPooledRequestAction<T> implements RequestAction<T>
 
   @Override
   public void connect(final Downstream<? super T> downstream) throws Exception {
-    Future<Channel> connectFuture = this.channelPoolMap.get(baseURI).acquire();
+    //Future<Channel> connectFuture = this.channelPoolMap.get(baseURI).acquire();
+    Future<Channel> connectFuture = this.channelPoolMap.get(baseURI).acquire(channel -> addCommonResponseHandlers(channel.pipeline(), downstream));
     connectFuture.addListener(f1 -> {
       if (!connectFuture.isSuccess()) {
         error(downstream, connectFuture.cause());
       } else {
         Channel channel = connectFuture.getNow();
-        addCommonResponseHandlers(channel.pipeline(), downstream);
+        //Channel channel = connectFuture.channel();
+        //addCommonResponseHandlers(channel.pipeline(), downstream);
 
         String fullPath = getFullPath(uri);
         FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(requestSpecBacking.getMethod()), fullPath, requestSpecBacking.getBody());

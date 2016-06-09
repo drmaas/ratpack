@@ -43,7 +43,7 @@ public class PooledContentAggregatingRequestAction extends AbstractPooledRequest
   private int maxContentLengthBytes;
 
   public PooledContentAggregatingRequestAction(Action<? super RequestSpec> requestConfigurer,
-                                               ChannelPoolMap<URI, ChannelPool> channelPoolMap,
+                                               ChannelPoolMap<URI, BootstrappingChannelPool> channelPoolMap,
                                                URI uri,
                                                ByteBufAllocator byteBufAllocator,
                                                int maxContentLengthBytes,

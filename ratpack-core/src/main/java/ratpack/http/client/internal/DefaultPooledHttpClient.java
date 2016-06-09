@@ -24,10 +24,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.pool.AbstractChannelPoolHandler;
 import io.netty.channel.pool.AbstractChannelPoolMap;
-import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.ChannelPoolHandler;
 import io.netty.channel.pool.ChannelPoolMap;
-import io.netty.channel.pool.FixedChannelPool;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -50,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 public class DefaultPooledHttpClient implements PooledHttpClient {
   public static final Logger LOGGER = LoggerFactory.getLogger(DefaultPooledHttpClient.class);
 
-  private ChannelPoolMap<URI, ChannelPool> channelPoolMap;
+  private ChannelPoolMap<URI, BootstrappingChannelPool> channelPoolMap;
   private int maxContentLengthBytes;
   private PooledHttpConfig config;
   private ByteBufAllocator byteBufAllocator;
@@ -70,9 +68,9 @@ public class DefaultPooledHttpClient implements PooledHttpClient {
       .channel(ChannelImplDetector.getSocketChannelImpl())
       .group(execController.getEventLoopGroup());
 
-    channelPoolMap = new AbstractChannelPoolMap<URI, ChannelPool>() {
+    channelPoolMap = new AbstractChannelPoolMap<URI, BootstrappingChannelPool>() {
       @Override
-      protected ChannelPool newPool(URI uri) {
+      protected BootstrappingChannelPool newPool(URI uri) {
         if (config.isPooled()) {
           return createPooledPool(uri);
         } else {
@@ -109,13 +107,13 @@ public class DefaultPooledHttpClient implements PooledHttpClient {
     return Promise.async(downstream -> new PooledContentStreamingRequestAction(requestConfigurer, channelPoolMap, uri, this.byteBufAllocator, Execution.current(), 0).connect(downstream));
   }
 
-  private ChannelPool createPooledPool(URI uri) {
+  private BootstrappingChannelPool createPooledPool(URI uri) {
     baseBoostrap.option(ChannelOption.SO_KEEPALIVE, true);
     ChannelPoolHandler handler = createChannelPoolHandler(uri);
-    return new FixedChannelPool(baseBoostrap, handler, config.getMaxConnections());
+    return new PoolingChannelPool(baseBoostrap, handler, config.getMaxConnections());
   }
 
-  private ChannelPool createNonPooledPool(URI uri) {
+  private BootstrappingChannelPool createNonPooledPool(URI uri) {
     baseBoostrap.option(ChannelOption.SO_KEEPALIVE, false);
     ChannelPoolHandler handler = createChannelPoolHandler(uri);
     return new NonPoolingChannelPool(baseBoostrap, handler);

@@ -4,17 +4,18 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.ChannelPoolHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 
+import java.util.function.Consumer;
+
 /**
  * Creates a channel pool that does no pooling.
  * TODO slow
  */
-public final class NonPoolingChannelPool implements ChannelPool {
+public final class NonPoolingChannelPool implements BootstrappingChannelPool {
 
   private final ChannelPoolHandler handler;
   private final Bootstrap bootstrap;
@@ -22,12 +23,29 @@ public final class NonPoolingChannelPool implements ChannelPool {
   public NonPoolingChannelPool(Bootstrap bootstrap, ChannelPoolHandler handler) {
     this.handler = handler;
     this.bootstrap = bootstrap;
-    this.bootstrap.handler(new ChannelInitializer<Channel>() {
+  }
+
+  @Override
+  public Future<Channel> acquire(Consumer<Channel> consumer) {
+    Bootstrap b = bootstrap.clone().handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
         handler.channelCreated(ch);
+        consumer.accept(ch);
       }
     });
+    Promise<Channel> promise = bootstrap.config().group().next().<Channel>newPromise();
+    try {
+      ChannelFuture f = b.connect();
+      if (f.isDone()) {
+        notifyConnect(f, promise);
+      } else {
+        f.addListener(f1 -> notifyConnect(f, promise));
+      }
+    } catch (Throwable cause) {
+      promise.setFailure(cause);
+    }
+    return promise;
   }
 
   @Override
@@ -57,23 +75,6 @@ public final class NonPoolingChannelPool implements ChannelPool {
 
   @Override
   public Future<Void> release(final Channel channel, final Promise<Void> promise) {
-    try {
-      handler.channelReleased(channel);
-      ChannelFuture f = channel.close();
-      f.addListener(new FutureListener<Void>() {
-        @Override
-        public void operationComplete(Future<Void> future) throws Exception {
-          if (future.isSuccess()) {
-            promise.setSuccess(null);
-          } else {
-            promise.setFailure(future.cause());
-          }
-        }
-      });
-    } catch (Throwable cause) {
-      promise.setFailure(cause);
-      channel.close();
-    }
     return promise;
   }
 
