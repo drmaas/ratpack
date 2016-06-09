@@ -216,10 +216,10 @@ public class PooledContentStreamingRequestAction extends AbstractPooledRequestAc
         @Override
         public void cancel() {
           stopped.set(true);
+          channelPoolMap.get(baseURI).release(channelPipeline.channel());
           if (!isKeepAlive && channelPipeline.channel().isOpen()) {
             channelPipeline.channel().close();
           }
-          channelPoolMap.get(baseURI).release(channelPipeline.channel());
         }
       });
     }
