@@ -89,11 +89,11 @@ public class PooledContentStreamingRequestAction extends AbstractPooledRequestAc
 
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        channelPoolMap.get(baseURI).release(ctx.channel());
         if (!isKeepAlive) {
           LOGGER.error("Closing channel={}", ctx.channel().id().asShortText(), cause);
           ctx.close();
         }
-        channelPoolMap.get(baseURI).release(ctx.channel());
         error(downstream, cause);
       }
     });
@@ -188,10 +188,10 @@ public class PooledContentStreamingRequestAction extends AbstractPooledRequestAc
           if (stopped.compareAndSet(false, true)) {
             subscriber.onError(cause);
           }
+          channelPoolMap.get(baseURI).release(ctx.channel());
           if (!isKeepAlive && ctx.channel().isOpen()) {
             ctx.close();
           }
-          channelPoolMap.get(baseURI).release(ctx.channel());
         }
       });
 

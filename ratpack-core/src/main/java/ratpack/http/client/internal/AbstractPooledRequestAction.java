@@ -135,9 +135,6 @@ public abstract class AbstractPooledRequestAction<T> implements RequestAction<T>
         error(downstream, connectFuture.cause());
       } else {
         Channel channel = connectFuture.getNow();
-        //Channel channel = connectFuture.channel();
-        //addCommonResponseHandlers(channel.pipeline(), downstream);
-
         String fullPath = getFullPath(uri);
         FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(requestSpecBacking.getMethod()), fullPath, requestSpecBacking.getBody());
         if (headers.get(HttpHeaderConstants.HOST) == null) {

@@ -75,6 +75,10 @@ public final class NonPoolingChannelPool implements BootstrappingChannelPool {
 
   @Override
   public Future<Void> release(final Channel channel, final Promise<Void> promise) {
+    try {
+      handler.channelReleased(channel);
+    } catch (Exception e) {
+    }
     return promise;
   }
 
