@@ -8,40 +8,16 @@ import io.netty.channel.pool.FixedChannelPool;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 
-import java.util.function.Consumer;
-
 /**
  *
  */
-public class PoolingChannelPool implements BootstrappingChannelPool {
+public class PoolingChannelPool extends BootstrappingChannelPool {
 
   protected final ChannelPool channelPool;
-  protected final Bootstrap bootstrap;
-  protected final ChannelPoolHandler handler;
 
   public PoolingChannelPool(Bootstrap bootstrap, ChannelPoolHandler handler, int maxConnections) {
-    this.bootstrap = bootstrap;
-    this.handler = handler;
+    super(bootstrap, handler);
     this.channelPool = new FixedChannelPool(bootstrap, handler, maxConnections);
-  }
-
-  @Override
-  public Future<Channel> acquire(Consumer<Channel> consumer) {
-//    Bootstrap b = bootstrap.clone().handler(new ChannelInitializer<Channel>() {
-//      @Override
-//      protected void initChannel(Channel ch) throws Exception {
-//        handler.channelCreated(ch);
-//        consumer.accept(ch);
-//      }
-//    });
-//    return b.connect();
-    return acquire().addListener(f -> {
-      if (f.isDone()) {
-        consumer.accept((Channel)f.getNow());
-      } else {
-        f.addListener(f1 -> consumer.accept((Channel)f1.getNow()));
-      }
-    });
   }
 
   @Override

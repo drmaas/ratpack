@@ -38,7 +38,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ratpack.exec.Downstream;
@@ -129,12 +128,12 @@ public abstract class AbstractPooledRequestAction<T> implements RequestAction<T>
   @Override
   public void connect(final Downstream<? super T> downstream) throws Exception {
     //Future<Channel> connectFuture = this.channelPoolMap.get(baseURI).acquire();
-    Future<Channel> connectFuture = this.channelPoolMap.get(baseURI).acquire(channel -> addCommonResponseHandlers(channel.pipeline(), downstream));
+    ChannelFuture connectFuture = this.channelPoolMap.get(baseURI).acquire(channel -> addCommonResponseHandlers(channel.pipeline(), downstream));
     connectFuture.addListener(f1 -> {
       if (!connectFuture.isSuccess()) {
         error(downstream, connectFuture.cause());
       } else {
-        Channel channel = connectFuture.getNow();
+        Channel channel = connectFuture.channel();
         String fullPath = getFullPath(uri);
         FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.valueOf(requestSpecBacking.getMethod()), fullPath, requestSpecBacking.getBody());
         if (headers.get(HttpHeaderConstants.HOST) == null) {
