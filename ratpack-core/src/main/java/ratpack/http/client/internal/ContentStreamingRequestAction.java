@@ -76,6 +76,7 @@ public class ContentStreamingRequestAction extends RequestActionSupport<Streamed
         execution.onComplete(() -> {
           channelPoolMap.get(baseURI).release(ctx.channel());
           if (!subscribedTo.get() && ctx.channel().isOpen()) {
+            System.out.println("Closing channel context");
             ctx.close();
           }
         });

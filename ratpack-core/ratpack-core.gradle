@@ -59,6 +59,7 @@ test {
   maxParallelForks = 3
   testLogging {
     events "started", "passed", "skipped", "failed"
+    showStandardStreams = true
   }
 }
 
