@@ -50,7 +50,7 @@ class ContentStreamingRequestActionSpec extends HttpClientSpec implements Pooled
         requestAction = new ChannelSpyRequestAction({}, map, pooled, otherAppUrl("foo"), byteBufAllocator, execution)
         Promise.async(requestAction).then {
           execution.onComplete {
-            println "Counting down latch"
+            println "Counting down latch - foo"
             latch.countDown()
           }
           render 'foo'
