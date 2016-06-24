@@ -60,7 +60,9 @@ class ContentStreamingRequestActionSpec extends HttpClientSpec implements Pooled
 
     expect:
     text == 'foo'
+    println "asserting channel status before latch await - open=$requestAction.channel.open"
     latch.await()
+    println "asserting channel status after latch await - open=$requestAction.channel.open"
     assert !requestAction.channel.open
 
     where:
