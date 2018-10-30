@@ -18,9 +18,11 @@ package ratpack.http.client;
 
 import io.netty.buffer.ByteBufAllocator;
 import org.reactivestreams.Publisher;
+import ratpack.exec.ExecController;
 import ratpack.exec.Promise;
 import ratpack.func.Action;
 import ratpack.http.client.internal.DefaultHttpClient;
+import ratpack.http.client.internal.StandaloneHttpClient;
 import ratpack.registry.Registry;
 import ratpack.server.ServerConfig;
 import ratpack.util.Exceptions;
@@ -91,6 +93,20 @@ public interface HttpClient extends AutoCloseable {
    */
   static HttpClient of(Action<? super HttpClientSpec> action) throws Exception {
     return DefaultHttpClient.of(action);
+  }
+
+  /**
+   * Creates a new standalone new HTTP client that can be used outside of the ratpack request/response lifecycle.
+   *
+   * @param execController the {@link ExecController} in which requests are executed
+   * @param action configuration for the client
+   * @return a HTTP client
+   * @throws Exception any thrown by {@code action}
+   * @see HttpClientSpec
+   * @since 1.6
+   */
+  static HttpClient of(ExecController execController, Action<? super HttpClientSpec> action) throws Exception {
+    return StandaloneHttpClient.of(execController, action);
   }
 
   /**

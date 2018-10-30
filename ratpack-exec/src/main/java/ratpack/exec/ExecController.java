@@ -17,6 +17,7 @@
 package ratpack.exec;
 
 import io.netty.channel.EventLoopGroup;
+import ratpack.exec.internal.DefaultExecController;
 import ratpack.exec.internal.ExecThreadBinding;
 
 import java.util.Optional;
@@ -29,6 +30,31 @@ import java.util.concurrent.ScheduledExecutorService;
  * The instance for an application can be obtained via the server registry.
  */
 public interface ExecController extends AutoCloseable {
+
+  /**
+   * Creates a standalone execution controller bound to the current thread.
+   * <p>
+   * This allows promises to be used outside of the request/response lifecycle.
+   *
+   * @return the execution controller for the current thread
+   */
+  static ExecController create() {
+    return ExecThreadBinding.maybeGet().map(ExecThreadBinding::getExecController).orElseGet(() ->
+      new DefaultExecController(Runtime.getRuntime().availableProcessors() * 2));
+  }
+
+  /**
+   * Creates a standalone execution controller bound to the current thread.
+   * <p>
+   * This allows promises to be used outside of the request/response lifecycle.
+   *
+   * @param numThreads the number of event loop threads to create
+   * @return the execution controller for the current thread
+   */
+  static ExecController create(int numThreads) {
+    return ExecThreadBinding.maybeGet().map(ExecThreadBinding::getExecController).orElseGet(() ->
+      new DefaultExecController(numThreads));
+  }
 
   /**
    * Returns the execution controller bound to the current thread, if this is a Ratpack managed compute thread.

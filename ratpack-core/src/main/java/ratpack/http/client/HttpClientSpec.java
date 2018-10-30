@@ -172,4 +172,27 @@ public interface HttpClientSpec {
    * @since 1.6
    */
   HttpClientSpec enableMetricsCollection(boolean enableMetricsCollection);
+
+  ByteBufAllocator getByteBufAllocator();
+
+  int getPoolSize();
+
+  int getPoolQueueSize();
+
+  int getMaxContentLength();
+
+  int getResponseMaxChunkSize();
+
+  Duration getReadTimeout();
+
+  Duration getConnectTimeout();
+
+  Action<? super RequestSpec> getRequestInterceptor();
+
+  Action<? super HttpResponse> getResponseInterceptor();
+
+  Action<? super Throwable> getErrorInterceptor();
+
+  boolean getEnableMetricsCollection();
+
 }
