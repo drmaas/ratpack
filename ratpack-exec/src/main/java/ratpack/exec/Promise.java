@@ -401,6 +401,18 @@ public interface Promise<T> {
     );
   }
 
+  default Promise<T> onComplete(Block block) {
+    return transform(up -> down ->
+      up.connect(down.onComplete(() -> {
+        try {
+          block.execute();
+        } catch (Throwable e) {
+          down.error(e);
+        }
+      }))
+    );
+  }
+
   /**
    * Specifies the action to take if the an error of the given type occurs trying to produce the promised value.
    *
