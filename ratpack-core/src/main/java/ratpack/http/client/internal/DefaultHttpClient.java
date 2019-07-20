@@ -17,9 +17,13 @@
 package ratpack.http.client.internal;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoop;
 import io.netty.channel.pool.ChannelHealthChecker;
 import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.SimpleChannelPool;
@@ -49,6 +53,13 @@ public class DefaultHttpClient implements HttpClientInternal {
   private static final ChannelHealthChecker ALWAYS_UNHEALTHY = channel ->
     channel.eventLoop().newSucceededFuture(Boolean.FALSE);
 
+  private ChannelHealthChecker ALIVE = channel -> {
+    EventLoop loop = channel.eventLoop();
+    ByteBuf ping = Unpooled.wrappedBuffer("ping".getBytes());
+    ChannelFuture future = channel.writeAndFlush(ping);
+    return future.isSuccess() ? loop.newSucceededFuture(Boolean.TRUE) : loop.newSucceededFuture(Boolean.FALSE);
+  };
+
   private final Map<String, ChannelPoolStats> hostStats = new ConcurrentHashMap<>();
 
   private final HttpChannelPoolMap channelPoolMap = new HttpChannelPoolMap() {
@@ -66,7 +77,7 @@ public class DefaultHttpClient implements HttpClientInternal {
       if (isPooling()) {
         InstrumentedChannelPoolHandler channelPoolHandler = getPoolingHandler(key);
         hostStats.put(key.host, channelPoolHandler);
-        CleanClosingFixedChannelPool channelPool = new CleanClosingFixedChannelPool(bootstrap, channelPoolHandler, getPoolSize(), getPoolQueueSize());
+        CleanClosingFixedChannelPool channelPool = new CleanClosingFixedChannelPool(bootstrap, channelPoolHandler, ALIVE, getPoolSize(), getPoolQueueSize());
         ((ExecControllerInternal) key.execution.getController()).onClose(() -> {
           remove(key);
           channelPool.closeCleanly();
