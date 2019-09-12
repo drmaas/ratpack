@@ -169,4 +169,9 @@ public class DefaultPromise<T> implements Promise<T> {
     }));
   }
 
+  // TODO
+  public void cancel() {
+    upstream.cancel();
+  }
+
 }

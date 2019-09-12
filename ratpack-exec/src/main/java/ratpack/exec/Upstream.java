@@ -41,4 +41,8 @@ public interface Upstream<T> {
    */
   void connect(Downstream<? super T> downstream) throws Exception;
 
+  // TODO
+  default void cancel() {
+  }
+
 }

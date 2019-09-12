@@ -70,6 +70,7 @@ abstract class RequestActionSupport<T> implements Upstream<T> {
 
   private boolean fired;
   private boolean disposed;
+  private ChannelPipeline channelPipeline;
 
   RequestActionSupport(URI uri, HttpClientInternal client, int redirectCount, Execution execution, Action<? super RequestSpec> requestConfigurer) throws Exception {
     this.requestConfigurer = requestConfigurer;
@@ -86,10 +87,16 @@ abstract class RequestActionSupport<T> implements Upstream<T> {
   protected abstract void addResponseHandlers(ChannelPipeline p, Downstream<? super T> downstream);
 
   @Override
+  public void cancel() {
+    forceDispose(channelPipeline);
+  }
+
+  @Override
   public void connect(final Downstream<? super T> downstream) throws Exception {
     channelPool.acquire().addListener(acquireFuture -> {
       if (acquireFuture.isSuccess()) {
         Channel channel = (Channel) acquireFuture.getNow();
+        channelPipeline = channel.pipeline();
         if (channel.eventLoop().equals(execution.getEventLoop())) {
           send(downstream, channel);
         } else {

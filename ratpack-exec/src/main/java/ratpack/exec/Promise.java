@@ -2470,4 +2470,7 @@ public interface Promise<T> {
     return async(downstream -> downstream.accept(future));
   }
 
+  // TODO
+  void cancel();
+
 }

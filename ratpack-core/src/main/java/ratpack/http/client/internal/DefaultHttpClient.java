@@ -23,10 +23,12 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.pool.ChannelHealthChecker;
 import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.SimpleChannelPool;
+import ratpack.exec.Downstream;
 import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Operation;
 import ratpack.exec.Promise;
+import ratpack.exec.Upstream;
 import ratpack.exec.internal.ExecControllerInternal;
 import ratpack.func.Action;
 import ratpack.http.client.HttpClient;
@@ -301,8 +303,24 @@ public class DefaultHttpClient implements HttpClientInternal {
 
   @Override
   public Promise<ReceivedResponse> request(URI uri, final Action<? super RequestSpec> requestConfigurer) {
+    Upstream<ReceivedResponse> upstream = new Upstream<ReceivedResponse>() {
+
+      private ContentAggregatingRequestAction contentAggregatingRequestAction;
+
+      @Override
+      public void connect(Downstream<? super ReceivedResponse> downstream) throws Exception {
+        this.contentAggregatingRequestAction = new ContentAggregatingRequestAction(uri, DefaultHttpClient.this, 0, Execution.current(), requestConfigurer.append(spec.requestInterceptor));
+        this.contentAggregatingRequestAction.connect(downstream);
+      }
+
+      @Override
+      public void cancel() {
+        this.contentAggregatingRequestAction.cancel();
+      }
+
+    };
     return intercept(
-      Promise.async(downstream -> new ContentAggregatingRequestAction(uri, this, 0, Execution.current(), requestConfigurer.append(spec.requestInterceptor)).connect(downstream)),
+      Promise.async(upstream),
       spec.responseInterceptor,
       spec.errorInterceptor
     );
