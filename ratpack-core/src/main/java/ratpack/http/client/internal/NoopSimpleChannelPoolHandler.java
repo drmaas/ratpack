@@ -46,6 +46,11 @@ public class NoopSimpleChannelPoolHandler extends AbstractChannelPoolHandler imp
   }
 
   @Override
+  public int getInactiveConnectionCount() {
+    return 0;
+  }
+
+  @Override
   public int getIdleConnectionCount() {
     return 0;
   }

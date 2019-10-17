@@ -22,10 +22,12 @@ public interface ChannelPoolStats {
 
   int getActiveConnectionCount();
 
+  int getInactiveConnectionCount();
+
   int getIdleConnectionCount();
 
   default HostStats getHostStats() {
-    return new HostStats(getActiveConnectionCount(), getIdleConnectionCount());
+    return new HostStats(getActiveConnectionCount(), getIdleConnectionCount(), getInactiveConnectionCount());
   }
 
 }

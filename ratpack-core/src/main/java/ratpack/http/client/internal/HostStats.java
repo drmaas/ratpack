@@ -19,11 +19,13 @@ package ratpack.http.client.internal;
 public class HostStats {
   private final long activeConnectionCount;
   private final long idleConnectionCount;
+  private final long inactiveConnectionCount;
   private final long totalConnectionCount;
 
-  public HostStats(long activeConnectionCount, long idleConnectionCount) {
+  public HostStats(long activeConnectionCount, long idleConnectionCount, long inactiveConnectionCount) {
     this.activeConnectionCount = activeConnectionCount;
     this.idleConnectionCount = idleConnectionCount;
+    this.inactiveConnectionCount = inactiveConnectionCount;
     this.totalConnectionCount = activeConnectionCount + idleConnectionCount;
   }
 
@@ -33,6 +35,10 @@ public class HostStats {
 
   public long getIdleConnectionCount() {
     return idleConnectionCount;
+  }
+
+  public long getInactiveConnectionCount() {
+    return inactiveConnectionCount;
   }
 
   public long getTotalConnectionCount() {

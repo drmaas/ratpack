@@ -60,6 +60,17 @@ public class HttpClientStats {
       .sum();
   }
 
+  /**
+   * @return A long representing the number of non-active (idle or closed) connections in the connection pool.
+   */
+  public long getTotalInactiveConnectionCount() {
+    return statsPerHost
+      .values()
+      .stream()
+      .mapToLong(HostStats::getInactiveConnectionCount)
+      .sum();
+  }
+
   @Override
   public String toString() {
     return "There are " + getTotalConnectionCount()

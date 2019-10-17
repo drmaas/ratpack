@@ -19,39 +19,36 @@ package ratpack.http.client.internal;
 import io.netty.channel.Channel;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.LongAdder;
 
 public class InstrumentedFixedChannelPoolHandler extends NoopFixedChannelPoolHandler {
 
-  private final LongAdder activeConnectionCount;
-  private final int maxConnectionCount;
-
   public InstrumentedFixedChannelPoolHandler(HttpChannelKey channelKey, int poolSize, Duration idleTimeout) {
-    super(channelKey, idleTimeout);
-    this.activeConnectionCount = new LongAdder();
-    this.maxConnectionCount = poolSize;
+    super(channelKey, poolSize, idleTimeout);
   }
 
   @Override
   public void channelReleased(Channel ch) throws Exception {
     super.channelReleased(ch);
-    activeConnectionCount.decrement();
   }
 
   @Override
   public void channelAcquired(Channel ch) throws Exception {
     super.channelAcquired(ch);
-    activeConnectionCount.increment();
   }
 
   @Override
   public int getActiveConnectionCount() {
-    return activeConnectionCount.intValue();
+    return super.getActiveConnectionCount();
   }
 
   @Override
   public int getIdleConnectionCount() {
-    return maxConnectionCount - getActiveConnectionCount();
+    return super.getIdleConnectionCount();
+  }
+
+  @Override
+  public int getInactiveConnectionCount() {
+    return super.getInactiveConnectionCount();
   }
 
 }

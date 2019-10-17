@@ -39,6 +39,7 @@ public class HttpClientMetrics implements Service, Runnable {
   private static final String METRIC_PREFIX = "httpclient.";
   private static final String TOTAL_ACTIVE_CONNECTIONS = getMetricName("total.active.connections");
   private static final String TOTAL_IDLE_CONNECTIONS = getMetricName("total.idle.connections");
+  private static final String TOTAL_INACTIVE_CONNECTIONS = getMetricName("total.inactive.connections");
   private static final String TOTAL_CONNECTIONS = getMetricName("total.connections");
 
   private final HttpClient httpClient;
@@ -76,12 +77,15 @@ public class HttpClientMetrics implements Service, Runnable {
     HttpClientStats httpClientStats = ((DefaultHttpClient) httpClient).getHttpClientStats();
     gauge(TOTAL_ACTIVE_CONNECTIONS).setValue(httpClientStats.getTotalActiveConnectionCount());
     gauge(TOTAL_IDLE_CONNECTIONS).setValue(httpClientStats.getTotalIdleConnectionCount());
+    gauge(TOTAL_INACTIVE_CONNECTIONS).setValue(httpClientStats.getTotalInactiveConnectionCount());
     gauge(TOTAL_CONNECTIONS).setValue(httpClientStats.getTotalConnectionCount());
     httpClientStats.getStatsPerHost().forEach((host, stats) -> {
         gauge(getHostMetricName(host, "total.active.connections"))
           .setValue(stats.getActiveConnectionCount());
         gauge(getHostMetricName(host, "total.idle.connections"))
           .setValue(stats.getIdleConnectionCount());
+      gauge(getHostMetricName(host, "total.inactive.connections"))
+        .setValue(stats.getInactiveConnectionCount());
       gauge(getHostMetricName(host, "total.connections"))
           .setValue(stats.getTotalConnectionCount());
       });

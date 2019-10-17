@@ -90,7 +90,7 @@ public class DefaultHttpClient implements HttpClientInternal {
     if (spec.enableMetricsCollection) {
       return new InstrumentedFixedChannelPoolHandler(key, getPoolSize(), getIdleTimeout());
     }
-    return new NoopFixedChannelPoolHandler(key, getIdleTimeout());
+    return new NoopFixedChannelPoolHandler(key, getPoolSize(), getIdleTimeout());
   }
 
   private InstrumentedChannelPoolHandler getSimpleHandler(HttpChannelKey key) {

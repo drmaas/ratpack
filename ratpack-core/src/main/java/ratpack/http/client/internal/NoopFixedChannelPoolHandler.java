@@ -22,17 +22,25 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 public class NoopFixedChannelPoolHandler extends AbstractChannelPoolHandler implements InstrumentedChannelPoolHandler {
 
   private static final String IDLE_STATE_HANDLER_NAME = "idleState";
+  private static final String IDLE_TIMEOUT_HANDLER_NAME = "idleTimeout";
 
   private final String host;
   private final Duration idleTimeout;
+  private final LongAdder activeConnectionCount;
+  private final LongAdder idleConnectionCount;
+  private final int maxConnectionCount;
 
-  public NoopFixedChannelPoolHandler(HttpChannelKey channelKey, Duration idleTimeout) {
+  public NoopFixedChannelPoolHandler(HttpChannelKey channelKey, int poolSize, Duration idleTimeout) {
     this.host = channelKey.host;
     this.idleTimeout = idleTimeout;
+    this.activeConnectionCount = new LongAdder();
+    this.idleConnectionCount = new LongAdder();
+    this.maxConnectionCount = poolSize;
   }
 
   @Override
@@ -46,9 +54,13 @@ public class NoopFixedChannelPoolHandler extends AbstractChannelPoolHandler impl
       ch.pipeline().addLast(IdlingConnectionHandler.INSTANCE);
       if (idleTimeout.toNanos() > 0) {
         ch.pipeline().addLast(IDLE_STATE_HANDLER_NAME, new IdleStateHandler(idleTimeout.toNanos(), idleTimeout.toNanos(), 0, TimeUnit.NANOSECONDS));
-        ch.pipeline().addLast(IdleTimeoutHandler.INSTANCE);
+        ch.pipeline().addLast(IDLE_TIMEOUT_HANDLER_NAME, new IdleTimeoutHandler(idleConnectionCount));
       }
+      idleConnectionCount.increment();
+    } else {
+      idleConnectionCount.decrement();
     }
+    activeConnectionCount.decrement();
   }
 
   @Override
@@ -59,9 +71,10 @@ public class NoopFixedChannelPoolHandler extends AbstractChannelPoolHandler impl
     if (ch.pipeline().context(IDLE_STATE_HANDLER_NAME) != null) {
       ch.pipeline().remove(IDLE_STATE_HANDLER_NAME);
     }
-    if (ch.pipeline().context(IdleTimeoutHandler.INSTANCE) != null) {
-      ch.pipeline().remove(IdleTimeoutHandler.INSTANCE);
+    if (ch.pipeline().context(IDLE_TIMEOUT_HANDLER_NAME) != null) {
+      ch.pipeline().remove(IDLE_TIMEOUT_HANDLER_NAME);
     }
+    activeConnectionCount.increment();
   }
 
   @Override
@@ -71,12 +84,16 @@ public class NoopFixedChannelPoolHandler extends AbstractChannelPoolHandler impl
 
   @Override
   public int getActiveConnectionCount() {
-    return 0;
+    return activeConnectionCount.intValue();
   }
 
   @Override
   public int getIdleConnectionCount() {
-    return 0;
+    return idleConnectionCount.intValue();
+  }
+
+  public int getInactiveConnectionCount() {
+    return maxConnectionCount - getActiveConnectionCount();
   }
 
 }
